@@ -131,7 +131,7 @@ public class Http {
 		}
 		HTTPRequest request = new DefaultHTTPRequest(
 			method,
-			url.getPath(),
+			url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath(),
 			modifiablePart,
 			httpVersion
 		);
