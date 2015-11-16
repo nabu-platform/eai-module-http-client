@@ -59,7 +59,7 @@ public class Http {
 			part = new PlainMimeEmptyPart(null, new MimeHeader("Content-Length", "0"));
 		}
 		
-		DefaultHTTPClient client = getTransactionable(transactionId, httpClientId).getClient();
+		DefaultHTTPClient client = getTransactionable(executionContext, transactionId, httpClientId).getClient();
 		ModifiablePart modifiablePart = part instanceof ModifiablePart ? (ModifiablePart) part : MimeUtils.wrapModifiable(part);
 		if (httpVersion >= 1.1 && MimeUtils.getHeader("Host", modifiablePart.getHeaders()) == null) {
 			modifiablePart.setHeader(new MimeHeader("Host", url.getAuthority()));
@@ -73,62 +73,66 @@ public class Http {
 		return client.execute(request, principal, "https".equals(url.getScheme()), followRedirects);
 	}
 	
-	private HTTPTransactionable getTransactionable(String transactionId, String clientId) throws IOException, KeyStoreException, NoSuchAlgorithmException {
+	public static HTTPTransactionable getTransactionable(ExecutionContext executionContext, String transactionId, String clientId) throws IOException, KeyStoreException, NoSuchAlgorithmException {
 		HTTPTransactionable transactionable = (HTTPTransactionable) executionContext.getTransactionContext().get(transactionId, clientId == null ? "$default" : clientId);
 		if (transactionable == null) {
 			HTTPClientArtifact httpArtifact = clientId == null ? null : executionContext.getServiceContext().getResolver(HTTPClientArtifact.class).resolve(clientId);
-			int maxAmountOfConnectionsPerTarget = httpArtifact == null || httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget() == null ? 5 : httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget(); 
-			Cookies cookiePolicy = httpArtifact == null || httpArtifact.getConfiguration().getCookiePolicy() == null ? Cookies.ACCEPT_ALL : httpArtifact.getConfiguration().getCookiePolicy();
-			SSLContextType sslContextType = httpArtifact == null || httpArtifact.getConfiguration().getSslContextType() == null ? SSLContextType.TLS : httpArtifact.getConfiguration().getSslContextType();
-
-			SSLContext context;
-			if (httpArtifact != null && httpArtifact.getConfiguration().getKeystore() != null) {
-				context = httpArtifact.getConfiguration().getKeystore().getKeyStore().newContext(sslContextType);
-			}
-			else {
-				context = SSLContext.getDefault();
-			}
-			
-			DefinedProxy proxy = httpArtifact == null ? null : httpArtifact.getConfiguration().getProxy();
-			int connectionTimeout = httpArtifact == null || httpArtifact.getConfiguration().getConnectionTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getConnectionTimeout();
-			int socketTimeout = httpArtifact == null || httpArtifact.getConfiguration().getSocketTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getSocketTimeout();
-
-			PooledConnectionHandler connectionHandler = new PooledConnectionHandler(context, maxAmountOfConnectionsPerTarget);
-			connectionHandler.setConnectionTimeout(connectionTimeout);
-			connectionHandler.setSocketTimeout(socketTimeout);
-			if (proxy != null) {
-				final String username = proxy.getConfiguration().getUsername();
-				final String password = proxy.getConfiguration().getPassword();
-				connectionHandler.setProxy(new HTTPProxy(
-					proxy.getConfiguration().getHost(), 
-					proxy.getConfiguration().getPort(), 
-					username == null ? null :
-						new BasicPrincipal() {
-							private static final long serialVersionUID = 1L;
-							@Override
-							public String getName() {
-								return username;
-							}
-							@Override
-							public String getPassword() {
-								return password;
-							}
-						},
-					new SPIAuthenticationHandler(),
-					connectionHandler.getConnectionTimeout(),
-					connectionHandler.getSocketTimeout(),
-					context
-				), generateProxyBypassFilters(proxy.getConfiguration().getBypass()).toArray(new ProxyBypassFilter[0]));
-			}
-			transactionable = new HTTPTransactionable(clientId == null ? "$default" : clientId, new DefaultHTTPClient(
-				connectionHandler, 
-				new SPIAuthenticationHandler(), 
-				new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()),
-				false
-			));
+			transactionable = new HTTPTransactionable(clientId == null ? "$default" : clientId, newClient(httpArtifact));
 			executionContext.getTransactionContext().add(transactionId, transactionable);
 		}
 		return transactionable;
+	}
+	
+	public static DefaultHTTPClient newClient(HTTPClientArtifact httpArtifact) throws IOException, KeyStoreException, NoSuchAlgorithmException {
+		int maxAmountOfConnectionsPerTarget = httpArtifact == null || httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget() == null ? 5 : httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget(); 
+		Cookies cookiePolicy = httpArtifact == null || httpArtifact.getConfiguration().getCookiePolicy() == null ? Cookies.ACCEPT_ALL : httpArtifact.getConfiguration().getCookiePolicy();
+		SSLContextType sslContextType = httpArtifact == null || httpArtifact.getConfiguration().getSslContextType() == null ? SSLContextType.TLS : httpArtifact.getConfiguration().getSslContextType();
+
+		SSLContext context;
+		if (httpArtifact != null && httpArtifact.getConfiguration().getKeystore() != null) {
+			context = httpArtifact.getConfiguration().getKeystore().getKeyStore().newContext(sslContextType);
+		}
+		else {
+			context = SSLContext.getDefault();
+		}
+		
+		DefinedProxy proxy = httpArtifact == null ? null : httpArtifact.getConfiguration().getProxy();
+		int connectionTimeout = httpArtifact == null || httpArtifact.getConfiguration().getConnectionTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getConnectionTimeout();
+		int socketTimeout = httpArtifact == null || httpArtifact.getConfiguration().getSocketTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getSocketTimeout();
+
+		PooledConnectionHandler connectionHandler = new PooledConnectionHandler(context, maxAmountOfConnectionsPerTarget);
+		connectionHandler.setConnectionTimeout(connectionTimeout);
+		connectionHandler.setSocketTimeout(socketTimeout);
+		if (proxy != null) {
+			final String username = proxy.getConfiguration().getUsername();
+			final String password = proxy.getConfiguration().getPassword();
+			connectionHandler.setProxy(new HTTPProxy(
+				proxy.getConfiguration().getHost(), 
+				proxy.getConfiguration().getPort(), 
+				username == null ? null :
+					new BasicPrincipal() {
+						private static final long serialVersionUID = 1L;
+						@Override
+						public String getName() {
+							return username;
+						}
+						@Override
+						public String getPassword() {
+							return password;
+						}
+					},
+				new SPIAuthenticationHandler(),
+				connectionHandler.getConnectionTimeout(),
+				connectionHandler.getSocketTimeout(),
+				context
+			), generateProxyBypassFilters(proxy.getConfiguration().getBypass()).toArray(new ProxyBypassFilter[0]));
+		}
+		return new DefaultHTTPClient(
+			connectionHandler, 
+			new SPIAuthenticationHandler(), 
+			new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()),
+			false
+		);
 	}
 	
 	private static List<ProxyBypassFilter> generateProxyBypassFilters(String bypass) {
@@ -148,4 +152,5 @@ public class Http {
 		}
 		return filters;
 	}
+	
 }

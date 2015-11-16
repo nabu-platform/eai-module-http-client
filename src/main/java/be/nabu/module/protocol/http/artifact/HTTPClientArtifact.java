@@ -8,5 +8,5 @@ public class HTTPClientArtifact extends JAXBArtifact<HTTPClientConfiguration> {
 	public HTTPClientArtifact(String id, ResourceContainer<?> directory) {
 		super(id, directory, "http-client.xml", HTTPClientConfiguration.class);
 	}
-
+	
 }
