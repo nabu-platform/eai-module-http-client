@@ -13,6 +13,7 @@ public class HTTPTransactionable implements Transactionable {
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	private String id;
 	private DefaultHTTPClient client;
+	private boolean closed;
 
 	public HTTPTransactionable(String id, DefaultHTTPClient client) {
 		this.id = id;
@@ -32,6 +33,7 @@ public class HTTPTransactionable implements Transactionable {
 	@Override
 	public void commit() {
 		try {
+			closed = true;
 			client.getConnectionHandler().close();
 		}
 		catch (IOException e) {
@@ -42,6 +44,7 @@ public class HTTPTransactionable implements Transactionable {
 	@Override
 	public void rollback() {
 		try {
+			closed = true;
 			client.getConnectionHandler().close();
 		}
 		catch (IOException e) {
@@ -51,6 +54,10 @@ public class HTTPTransactionable implements Transactionable {
 
 	public DefaultHTTPClient getClient() {
 		return client;
+	}
+
+	public boolean isClosed() {
+		return closed;
 	}
 
 }

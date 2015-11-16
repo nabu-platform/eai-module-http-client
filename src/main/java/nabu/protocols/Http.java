@@ -15,7 +15,6 @@ import javax.jws.WebService;
 import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 
-import be.nabu.eai.repository.artifacts.keystore.DefinedKeyStore;
 import be.nabu.eai.repository.artifacts.proxy.DefinedProxy;
 import be.nabu.libs.authentication.api.principals.BasicPrincipal;
 import be.nabu.libs.http.api.HTTPRequest;
@@ -30,6 +29,7 @@ import be.nabu.libs.http.core.DefaultHTTPRequest;
 import be.nabu.libs.services.api.ExecutionContext;
 import be.nabu.module.protocol.http.Cookies;
 import be.nabu.module.protocol.http.HTTPTransactionable;
+import be.nabu.module.protocol.http.artifact.HTTPClientArtifact;
 import be.nabu.utils.mime.api.ModifiablePart;
 import be.nabu.utils.mime.api.Part;
 import be.nabu.utils.mime.impl.FormatException;
@@ -41,24 +41,11 @@ import be.nabu.utils.security.SSLContextType;
 @WebService
 public class Http {
 	
-	public static final String HTTP_TRANSACTION_ID = "$httpClients";
-	
 	private ExecutionContext executionContext;
 	
 	@WebResult(name = "response")
-	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "part") Part part, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "clientId") String clientId, @WebParam(name = "proxyId") String proxyId, @WebParam(name = "sslContextType") SSLContextType contextType, @WebParam(name = "cookiePolicy") Cookies policy, @WebParam(name = "keystoreId") String keystoreId, @WebParam(name = "maxAmountOfConnectionsPerTarget") Integer maxAmountOfConnectionsPerTarget) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
-		if (clientId == null) {
-			clientId = "default";
-		}
-		if (maxAmountOfConnectionsPerTarget == null) {
-			maxAmountOfConnectionsPerTarget = 5;
-		}
-		if (policy == null) {
-			policy = Cookies.ACCEPT_ALL;
-		}
-		if (contextType == null) {
-			contextType = SSLContextType.TLS;
-		}
+	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
+		
 		if (followRedirects == null) {
 			followRedirects = true;
 		}
@@ -71,27 +58,44 @@ public class Http {
 		if (part == null) {
 			part = new PlainMimeEmptyPart(null, new MimeHeader("Content-Length", "0"));
 		}
-		HTTPTransactionable transactionable = (HTTPTransactionable) executionContext.getTransactionContext().get(HTTP_TRANSACTION_ID, clientId);
+		
+		DefaultHTTPClient client = getTransactionable(transactionId, httpClientId).getClient();
+		ModifiablePart modifiablePart = part instanceof ModifiablePart ? (ModifiablePart) part : MimeUtils.wrapModifiable(part);
+		if (httpVersion >= 1.1 && MimeUtils.getHeader("Host", modifiablePart.getHeaders()) == null) {
+			modifiablePart.setHeader(new MimeHeader("Host", url.getAuthority()));
+		}
+		HTTPRequest request = new DefaultHTTPRequest(
+			method,
+			url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath(),
+			modifiablePart,
+			httpVersion
+		);
+		return client.execute(request, principal, "https".equals(url.getScheme()), followRedirects);
+	}
+	
+	private HTTPTransactionable getTransactionable(String transactionId, String clientId) throws IOException, KeyStoreException, NoSuchAlgorithmException {
+		HTTPTransactionable transactionable = (HTTPTransactionable) executionContext.getTransactionContext().get(transactionId, clientId == null ? "$default" : clientId);
 		if (transactionable == null) {
+			HTTPClientArtifact httpArtifact = clientId == null ? null : executionContext.getServiceContext().getResolver(HTTPClientArtifact.class).resolve(clientId);
+			int maxAmountOfConnectionsPerTarget = httpArtifact == null || httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget() == null ? 5 : httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget(); 
+			Cookies cookiePolicy = httpArtifact == null || httpArtifact.getConfiguration().getCookiePolicy() == null ? Cookies.ACCEPT_ALL : httpArtifact.getConfiguration().getCookiePolicy();
+			SSLContextType sslContextType = httpArtifact == null || httpArtifact.getConfiguration().getSslContextType() == null ? SSLContextType.TLS : httpArtifact.getConfiguration().getSslContextType();
+
 			SSLContext context;
-			if (keystoreId != null) {
-				DefinedKeyStore keystore = executionContext.getServiceContext().getResolver(DefinedKeyStore.class).resolve(keystoreId);
-				if (keystore == null) {
-					throw new IllegalArgumentException("Invalid keystore id: " + keystoreId);
-				}
-				context = keystore.getKeyStore().newContext(contextType);
+			if (httpArtifact != null && httpArtifact.getConfiguration().getKeystore() != null) {
+				context = httpArtifact.getConfiguration().getKeystore().getKeyStore().newContext(sslContextType);
 			}
 			else {
 				context = SSLContext.getDefault();
 			}
-			DefinedProxy proxy = null;
-			if (proxyId != null) {
-				proxy = executionContext.getServiceContext().getResolver(DefinedProxy.class).resolve(proxyId);
-				if (proxy == null) {
-					throw new IllegalArgumentException("Invalid proxy id: " + proxyId);
-				}
-			}
+			
+			DefinedProxy proxy = httpArtifact == null ? null : httpArtifact.getConfiguration().getProxy();
+			int connectionTimeout = httpArtifact == null || httpArtifact.getConfiguration().getConnectionTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getConnectionTimeout();
+			int socketTimeout = httpArtifact == null || httpArtifact.getConfiguration().getSocketTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getSocketTimeout();
+
 			PooledConnectionHandler connectionHandler = new PooledConnectionHandler(context, maxAmountOfConnectionsPerTarget);
+			connectionHandler.setConnectionTimeout(connectionTimeout);
+			connectionHandler.setSocketTimeout(socketTimeout);
 			if (proxy != null) {
 				final String username = proxy.getConfiguration().getUsername();
 				final String password = proxy.getConfiguration().getPassword();
@@ -116,26 +120,15 @@ public class Http {
 					context
 				), generateProxyBypassFilters(proxy.getConfiguration().getBypass()).toArray(new ProxyBypassFilter[0]));
 			}
-			transactionable = new HTTPTransactionable(clientId, new DefaultHTTPClient(
+			transactionable = new HTTPTransactionable(clientId == null ? "$default" : clientId, new DefaultHTTPClient(
 				connectionHandler, 
 				new SPIAuthenticationHandler(), 
-				new CookieManager(new CustomCookieStore(), policy.getPolicy()),
+				new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()),
 				false
 			));
-			executionContext.getTransactionContext().add(HTTP_TRANSACTION_ID, transactionable);
+			executionContext.getTransactionContext().add(transactionId, transactionable);
 		}
-		DefaultHTTPClient client = transactionable.getClient();
-		ModifiablePart modifiablePart = part instanceof ModifiablePart ? (ModifiablePart) part : MimeUtils.wrapModifiable(part);
-		if (httpVersion >= 1.1 && MimeUtils.getHeader("Host", modifiablePart.getHeaders()) == null) {
-			modifiablePart.setHeader(new MimeHeader("Host", url.getAuthority()));
-		}
-		HTTPRequest request = new DefaultHTTPRequest(
-			method,
-			url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath(),
-			modifiablePart,
-			httpVersion
-		);
-		return client.execute(request, principal, "https".equals(url.getScheme()), followRedirects);
+		return transactionable;
 	}
 	
 	private static List<ProxyBypassFilter> generateProxyBypassFilters(String bypass) {
