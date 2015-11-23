@@ -83,6 +83,15 @@ public class Http {
 		return transactionable;
 	}
 	
+	public static HTTPTransactionable getTransactionable(ExecutionContext executionContext, String transactionId, HTTPClientArtifact httpArtifact) throws IOException, KeyStoreException, NoSuchAlgorithmException {
+		HTTPTransactionable transactionable = (HTTPTransactionable) executionContext.getTransactionContext().get(transactionId, httpArtifact == null ? "$default" : httpArtifact.getId());
+		if (transactionable == null) {
+			transactionable = new HTTPTransactionable(httpArtifact == null ? "$default" : httpArtifact.getId(), newClient(httpArtifact));
+			executionContext.getTransactionContext().add(transactionId, transactionable);
+		}
+		return transactionable;
+	}
+	
 	public static DefaultHTTPClient newClient(HTTPClientArtifact httpArtifact) throws IOException, KeyStoreException, NoSuchAlgorithmException {
 		int maxAmountOfConnectionsPerTarget = httpArtifact == null || httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget() == null ? 5 : httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget(); 
 		Cookies cookiePolicy = httpArtifact == null || httpArtifact.getConfiguration().getCookiePolicy() == null ? Cookies.ACCEPT_ALL : httpArtifact.getConfiguration().getCookiePolicy();
