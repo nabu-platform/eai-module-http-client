@@ -1,4 +1,4 @@
-package be.nabu.module.protocol.http;
+package be.nabu.eai.module.http;
 
 import java.net.CookiePolicy;
 

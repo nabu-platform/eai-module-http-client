@@ -1,4 +1,4 @@
-package be.nabu.module.protocol.http.artifact;
+package be.nabu.eai.module.http.artifact;
 
 import be.nabu.eai.repository.api.Repository;
 import be.nabu.eai.repository.managers.base.JAXBArtifactManager;

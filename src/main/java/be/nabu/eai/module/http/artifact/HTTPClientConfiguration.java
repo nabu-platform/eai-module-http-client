@@ -1,11 +1,13 @@
-package be.nabu.module.protocol.http.artifact;
+package be.nabu.eai.module.http.artifact;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import be.nabu.eai.module.http.Cookies;
 import be.nabu.eai.repository.artifacts.keystore.DefinedKeyStore;
 import be.nabu.eai.repository.artifacts.proxy.DefinedProxy;
-import be.nabu.module.protocol.http.Cookies;
+import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
 import be.nabu.utils.security.SSLContextType;
 
 @XmlRootElement(name = "httpClient")
@@ -37,12 +39,14 @@ public class HTTPClientConfiguration {
 			Integer maxAmountOfConnectionsPerTarget) {
 		this.maxAmountOfConnectionsPerTarget = maxAmountOfConnectionsPerTarget;
 	}
+	@XmlJavaTypeAdapter(value = ArtifactXMLAdapter.class)
 	public DefinedProxy getProxy() {
 		return proxy;
 	}
 	public void setProxy(DefinedProxy proxy) {
 		this.proxy = proxy;
 	}
+	@XmlJavaTypeAdapter(value = ArtifactXMLAdapter.class)
 	public DefinedKeyStore getKeystore() {
 		return keystore;
 	}

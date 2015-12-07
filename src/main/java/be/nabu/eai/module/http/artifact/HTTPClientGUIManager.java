@@ -1,4 +1,4 @@
-package be.nabu.module.protocol.http.artifact;
+package be.nabu.eai.module.http.artifact;
 
 import java.io.IOException;
 import java.util.List;
