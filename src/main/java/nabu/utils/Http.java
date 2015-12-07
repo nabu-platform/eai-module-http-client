@@ -1,4 +1,4 @@
-package nabu.services;
+package nabu.utils;
 
 import java.io.IOException;
 import java.net.CookieManager;
