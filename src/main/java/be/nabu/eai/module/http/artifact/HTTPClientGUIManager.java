@@ -22,7 +22,7 @@ public class HTTPClientGUIManager extends BaseJAXBGUIManager<HTTPClientConfigura
 
 	@Override
 	protected HTTPClientArtifact newInstance(MainController controller, RepositoryEntry entry, Value<?>... values) throws IOException {
-		return new HTTPClientArtifact(entry.getId(), entry.getContainer());
+		return new HTTPClientArtifact(entry.getId(), entry.getContainer(), entry.getRepository());
 	}
 
 	@Override

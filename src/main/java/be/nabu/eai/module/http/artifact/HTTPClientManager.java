@@ -12,7 +12,7 @@ public class HTTPClientManager extends JAXBArtifactManager<HTTPClientConfigurati
 
 	@Override
 	protected HTTPClientArtifact newInstance(String id, ResourceContainer<?> container, Repository repository) {
-		return new HTTPClientArtifact(id, container);
+		return new HTTPClientArtifact(id, container, repository);
 	}
 
 }
