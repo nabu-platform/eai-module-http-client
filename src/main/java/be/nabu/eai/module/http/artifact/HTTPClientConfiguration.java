@@ -4,6 +4,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import be.nabu.eai.api.EnvironmentSpecific;
 import be.nabu.eai.module.http.Cookies;
 import be.nabu.eai.repository.artifacts.keystore.DefinedKeyStore;
 import be.nabu.eai.repository.artifacts.proxy.DefinedProxy;
@@ -32,13 +33,16 @@ public class HTTPClientConfiguration {
 	public void setConnectionTimeout(Integer connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
 	}
+	
+	@EnvironmentSpecific
 	public Integer getMaxAmountOfConnectionsPerTarget() {
 		return maxAmountOfConnectionsPerTarget;
 	}
-	public void setMaxAmountOfConnectionsPerTarget(
-			Integer maxAmountOfConnectionsPerTarget) {
+	public void setMaxAmountOfConnectionsPerTarget(Integer maxAmountOfConnectionsPerTarget) {
 		this.maxAmountOfConnectionsPerTarget = maxAmountOfConnectionsPerTarget;
 	}
+	
+	@EnvironmentSpecific
 	@XmlJavaTypeAdapter(value = ArtifactXMLAdapter.class)
 	public DefinedProxy getProxy() {
 		return proxy;
@@ -46,6 +50,8 @@ public class HTTPClientConfiguration {
 	public void setProxy(DefinedProxy proxy) {
 		this.proxy = proxy;
 	}
+	
+	@EnvironmentSpecific
 	@XmlJavaTypeAdapter(value = ArtifactXMLAdapter.class)
 	public DefinedKeyStore getKeystore() {
 		return keystore;
@@ -53,12 +59,14 @@ public class HTTPClientConfiguration {
 	public void setKeystore(DefinedKeyStore keystore) {
 		this.keystore = keystore;
 	}
+	
 	public Cookies getCookiePolicy() {
 		return cookiePolicy;
 	}
 	public void setCookiePolicy(Cookies cookiePolicy) {
 		this.cookiePolicy = cookiePolicy;
 	}
+	
 	public SSLContextType getSslContextType() {
 		return sslContextType;
 	}
