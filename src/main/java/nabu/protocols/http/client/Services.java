@@ -1,4 +1,4 @@
-package nabu.utils;
+package nabu.protocols.http.client;
 
 import java.io.IOException;
 import java.net.CookieManager;
@@ -39,7 +39,7 @@ import be.nabu.utils.mime.impl.PlainMimeEmptyPart;
 import be.nabu.utils.security.SSLContextType;
 
 @WebService
-public class Http {
+public class Services {
 	
 	private ExecutionContext executionContext;
 	
