@@ -44,7 +44,7 @@ public class Services {
 	private ExecutionContext executionContext;
 	
 	@WebResult(name = "response")
-	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
+	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId, @WebParam(name = "forceFullTarget") Boolean forceFullTarget) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
 		
 		if (followRedirects == null) {
 			followRedirects = true;
@@ -58,6 +58,9 @@ public class Services {
 		if (part == null) {
 			part = new PlainMimeEmptyPart(null, new MimeHeader("Content-Length", "0"));
 		}
+		if (forceFullTarget == null) {
+			forceFullTarget = false;
+		}
 		
 		DefaultHTTPClient client = getTransactionable(executionContext, transactionId, httpClientId).getClient();
 		ModifiablePart modifiablePart = part instanceof ModifiablePart ? (ModifiablePart) part : MimeUtils.wrapModifiable(part);
@@ -66,7 +69,7 @@ public class Services {
 		}
 		HTTPRequest request = new DefaultHTTPRequest(
 			method,
-			url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath(),
+			forceFullTarget ? url.toString() : (url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath()),
 			modifiablePart,
 			httpVersion
 		);
