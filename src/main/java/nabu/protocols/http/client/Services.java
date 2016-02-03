@@ -18,7 +18,7 @@ import javax.validation.constraints.NotNull;
 import be.nabu.eai.module.http.client.Cookies;
 import be.nabu.eai.module.http.client.HTTPClientArtifact;
 import be.nabu.eai.module.http.client.HTTPTransactionable;
-import be.nabu.eai.repository.artifacts.proxy.DefinedProxy;
+import be.nabu.eai.module.proxy.ProxyArtifact;
 import be.nabu.libs.authentication.api.principals.BasicPrincipal;
 import be.nabu.libs.http.api.HTTPRequest;
 import be.nabu.libs.http.api.HTTPResponse;
@@ -108,7 +108,7 @@ public class Services {
 			context = SSLContext.getDefault();
 		}
 		
-		DefinedProxy proxy = httpArtifact == null ? null : httpArtifact.getConfiguration().getProxy();
+		ProxyArtifact proxy = httpArtifact == null ? null : httpArtifact.getConfiguration().getProxy();
 		int connectionTimeout = httpArtifact == null || httpArtifact.getConfiguration().getConnectionTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getConnectionTimeout();
 		int socketTimeout = httpArtifact == null || httpArtifact.getConfiguration().getSocketTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getSocketTimeout();
 
