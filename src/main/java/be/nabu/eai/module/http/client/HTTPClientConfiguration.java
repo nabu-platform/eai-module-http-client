@@ -5,8 +5,8 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import be.nabu.eai.api.EnvironmentSpecific;
+import be.nabu.eai.module.keystore.KeyStoreArtifact;
 import be.nabu.eai.module.proxy.ProxyArtifact;
-import be.nabu.eai.repository.artifacts.keystore.DefinedKeyStore;
 import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
 import be.nabu.utils.security.SSLContextType;
 
@@ -16,7 +16,7 @@ public class HTTPClientConfiguration {
 	
 	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget;
 	private ProxyArtifact proxy;
-	private DefinedKeyStore keystore;
+	private KeyStoreArtifact keystore;
 	private Cookies cookiePolicy;
 	private SSLContextType sslContextType;
 	
@@ -52,10 +52,10 @@ public class HTTPClientConfiguration {
 	
 	@EnvironmentSpecific
 	@XmlJavaTypeAdapter(value = ArtifactXMLAdapter.class)
-	public DefinedKeyStore getKeystore() {
+	public KeyStoreArtifact getKeystore() {
 		return keystore;
 	}
-	public void setKeystore(DefinedKeyStore keystore) {
+	public void setKeystore(KeyStoreArtifact keystore) {
 		this.keystore = keystore;
 	}
 	
