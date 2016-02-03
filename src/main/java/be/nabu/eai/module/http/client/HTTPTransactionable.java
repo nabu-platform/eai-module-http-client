@@ -1,4 +1,4 @@
-package be.nabu.eai.module.http;
+package be.nabu.eai.module.http.client;
 
 import java.io.IOException;
 

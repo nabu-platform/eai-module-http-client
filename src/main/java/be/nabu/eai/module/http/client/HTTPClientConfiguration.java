@@ -1,11 +1,10 @@
-package be.nabu.eai.module.http.artifact;
+package be.nabu.eai.module.http.client;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import be.nabu.eai.api.EnvironmentSpecific;
-import be.nabu.eai.module.http.Cookies;
 import be.nabu.eai.repository.artifacts.keystore.DefinedKeyStore;
 import be.nabu.eai.repository.artifacts.proxy.DefinedProxy;
 import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;

@@ -15,9 +15,9 @@ import javax.jws.WebService;
 import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 
-import be.nabu.eai.module.http.Cookies;
-import be.nabu.eai.module.http.HTTPTransactionable;
-import be.nabu.eai.module.http.artifact.HTTPClientArtifact;
+import be.nabu.eai.module.http.client.Cookies;
+import be.nabu.eai.module.http.client.HTTPClientArtifact;
+import be.nabu.eai.module.http.client.HTTPTransactionable;
 import be.nabu.eai.repository.artifacts.proxy.DefinedProxy;
 import be.nabu.libs.authentication.api.principals.BasicPrincipal;
 import be.nabu.libs.http.api.HTTPRequest;
