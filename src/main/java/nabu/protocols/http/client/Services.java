@@ -25,6 +25,7 @@ import be.nabu.libs.http.api.HTTPResponse;
 import be.nabu.libs.http.api.client.ProxyBypassFilter;
 import be.nabu.libs.http.client.DefaultHTTPClient;
 import be.nabu.libs.http.client.HTTPProxy;
+import be.nabu.libs.http.client.NTLMPrincipalImpl;
 import be.nabu.libs.http.client.SPIAuthenticationHandler;
 import be.nabu.libs.http.client.connections.PooledConnectionHandler;
 import be.nabu.libs.http.core.CustomCookieStore;
@@ -73,6 +74,16 @@ public class Services {
 			modifiablePart,
 			httpVersion
 		);
+		if (principal.getName() != null) {
+			int index = principal.getName().indexOf('/');
+			if (index < 0) {
+				index = principal.getName().indexOf('\\');
+			}
+			// if we have a slash, assume NTLM
+			if (index > 0) {
+				principal = new NTLMPrincipalImpl(principal.getName().substring(0, index), principal.getName().substring(index + 1), principal.getName());
+			}
+		}
 		return client.execute(request, principal, "https".equals(url.getScheme()), followRedirects);
 	}
 	
