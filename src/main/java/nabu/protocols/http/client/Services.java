@@ -27,6 +27,7 @@ import be.nabu.libs.http.client.DefaultHTTPClient;
 import be.nabu.libs.http.client.HTTPProxy;
 import be.nabu.libs.http.client.NTLMPrincipalImpl;
 import be.nabu.libs.http.client.SPIAuthenticationHandler;
+import be.nabu.libs.http.client.connections.PlainConnectionHandler;
 import be.nabu.libs.http.client.connections.PooledConnectionHandler;
 import be.nabu.libs.http.core.CustomCookieStore;
 import be.nabu.libs.http.core.DefaultHTTPRequest;
@@ -151,7 +152,8 @@ public class Services {
 			), generateProxyBypassFilters(proxy.getConfiguration().getBypass()).toArray(new ProxyBypassFilter[0]));
 		}
 		return new DefaultHTTPClient(
-			connectionHandler, 
+//			connectionHandler, 
+			new PlainConnectionHandler(context, connectionTimeout, socketTimeout),
 			new SPIAuthenticationHandler(), 
 			new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()),
 			false
