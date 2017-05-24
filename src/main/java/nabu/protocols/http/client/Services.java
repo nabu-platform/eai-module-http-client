@@ -47,7 +47,6 @@ public class Services {
 	
 	@WebResult(name = "response")
 	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId, @WebParam(name = "forceFullTarget") Boolean forceFullTarget) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
-		
 		if (followRedirects == null) {
 			followRedirects = true;
 		}
@@ -69,13 +68,27 @@ public class Services {
 		if (httpVersion >= 1.1 && MimeUtils.getHeader("Host", modifiablePart.getHeaders()) == null) {
 			modifiablePart.setHeader(new MimeHeader("Host", url.getAuthority()));
 		}
+		
+		String target;
+		if (forceFullTarget) {
+			target = url.toString();
+		}
+		else {
+			target = url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath();
+			if (url.getQuery() != null) {
+				target += "?" + url.getQuery();
+			}
+			if (url.getFragment() != null) {
+				target += "#" + url.getFragment();
+			}
+		}
 		HTTPRequest request = new DefaultHTTPRequest(
 			method,
-			forceFullTarget ? url.toString() : (url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath()),
+			target,
 			modifiablePart,
 			httpVersion
 		);
-		if (principal.getName() != null) {
+		if (principal != null && principal.getName() != null) {
 			int index = principal.getName().indexOf('/');
 			if (index < 0) {
 				index = principal.getName().indexOf('\\');
