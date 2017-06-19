@@ -4,6 +4,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import be.nabu.eai.api.Advanced;
+import be.nabu.eai.api.Comment;
 import be.nabu.eai.api.EnvironmentSpecific;
 import be.nabu.eai.module.keystore.KeyStoreArtifact;
 import be.nabu.eai.module.proxy.ProxyArtifact;
@@ -11,7 +13,7 @@ import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
 import be.nabu.utils.security.SSLContextType;
 
 @XmlRootElement(name = "httpClient")
-@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout" })
+@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "type", "static" })
 public class HTTPClientConfiguration {
 	
 	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget;
@@ -19,6 +21,8 @@ public class HTTPClientConfiguration {
 	private KeyStoreArtifact keystore;
 	private Cookies cookiePolicy;
 	private SSLContextType sslContextType;
+	private Type type;
+	private boolean isStatic;
 	
 	public Integer getSocketTimeout() {
 		return socketTimeout;
@@ -71,5 +75,27 @@ public class HTTPClientConfiguration {
 	}
 	public void setSslContextType(SSLContextType sslContextType) {
 		this.sslContextType = sslContextType;
+	}
+	
+	@Advanced
+	public Type getType() {
+		return type;
+	}
+	public void setType(Type type) {
+		this.type = type;
+	}
+
+	@Advanced
+	@Comment(title = "Static clients are never closed but are shared by the entire server instance")
+	public boolean isStatic() {
+		return isStatic;
+	}
+	public void setStatic(boolean isStatic) {
+		this.isStatic = isStatic;
+	}
+
+	public enum Type {
+		SYNCHRONOUS,
+		ASYNCHRONOUS
 	}
 }

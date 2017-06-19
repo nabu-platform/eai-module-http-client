@@ -5,19 +5,21 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import be.nabu.libs.http.client.DefaultHTTPClient;
+import be.nabu.libs.http.api.client.HTTPClient;
 import be.nabu.libs.services.api.Transactionable;
 
 public class HTTPTransactionable implements Transactionable {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	private String id;
-	private DefaultHTTPClient client;
+	private HTTPClient client;
 	private boolean closed;
+	private boolean isStatic;
 
-	public HTTPTransactionable(String id, DefaultHTTPClient client) {
+	public HTTPTransactionable(String id, HTTPClient client, boolean isStatic) {
 		this.id = id;
 		this.client = client;
+		this.isStatic = isStatic;
 	}
 	
 	@Override
@@ -34,7 +36,9 @@ public class HTTPTransactionable implements Transactionable {
 	public void commit() {
 		try {
 			closed = true;
-			client.getConnectionHandler().close();
+			if (!isStatic) {
+				client.close();
+			}
 		}
 		catch (IOException e) {
 			logger.warn("Could not close connection pool properly", e);
@@ -45,14 +49,16 @@ public class HTTPTransactionable implements Transactionable {
 	public void rollback() {
 		try {
 			closed = true;
-			client.getConnectionHandler().close();
+			if (!isStatic) {
+				client.close();
+			}
 		}
 		catch (IOException e) {
 			logger.warn("Could not close connection pool properly", e);
 		}		
 	}
 
-	public DefaultHTTPClient getClient() {
+	public HTTPClient getClient() {
 		return client;
 	}
 
