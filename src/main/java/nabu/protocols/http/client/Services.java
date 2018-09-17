@@ -3,6 +3,7 @@ package nabu.protocols.http.client;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -39,12 +40,17 @@ import be.nabu.libs.http.client.nio.NIOHTTPClientImpl;
 import be.nabu.libs.http.core.CustomCookieStore;
 import be.nabu.libs.http.core.DefaultHTTPRequest;
 import be.nabu.libs.http.server.nio.MemoryMessageDataProvider;
+import be.nabu.libs.resources.URIUtils;
 import be.nabu.libs.services.api.ExecutionContext;
+import be.nabu.libs.types.api.KeyValuePair;
+import be.nabu.utils.io.IOUtils;
+import be.nabu.utils.mime.api.Header;
 import be.nabu.utils.mime.api.ModifiablePart;
 import be.nabu.utils.mime.api.Part;
 import be.nabu.utils.mime.impl.FormatException;
 import be.nabu.utils.mime.impl.MimeHeader;
 import be.nabu.utils.mime.impl.MimeUtils;
+import be.nabu.utils.mime.impl.PlainMimeContentPart;
 import be.nabu.utils.mime.impl.PlainMimeEmptyPart;
 import be.nabu.utils.security.SSLContextType;
 
@@ -110,13 +116,14 @@ public class Services {
 	}
 	
 	public static HTTPTransactionable getTransactionable(ExecutionContext executionContext, String transactionId, String clientId) throws IOException, KeyStoreException, NoSuchAlgorithmException {
-		HTTPTransactionable transactionable = (HTTPTransactionable) executionContext.getTransactionContext().get(transactionId, clientId == null ? "$default" : clientId);
-		if (transactionable == null) {
-			HTTPClientArtifact httpArtifact = clientId == null ? null : executionContext.getServiceContext().getResolver(HTTPClientArtifact.class).resolve(clientId);
-			transactionable = new HTTPTransactionable(clientId == null ? "$default" : clientId, newClient(httpArtifact), httpArtifact == null ? false : httpArtifact.getConfig().isStatic());
-			executionContext.getTransactionContext().add(transactionId, transactionable);
-		}
-		return transactionable;
+		HTTPClientArtifact httpArtifact = clientId == null ? null : executionContext.getServiceContext().getResolver(HTTPClientArtifact.class).resolve(clientId);
+		return getTransactionable(executionContext, transactionId, httpArtifact);
+//		HTTPTransactionable transactionable = (HTTPTransactionable) executionContext.getTransactionContext().get(transactionId, clientId == null ? "$default" : clientId);
+//		if (transactionable == null) {
+//			transactionable = new HTTPTransactionable(clientId == null ? "$default" : clientId, newClient(httpArtifact), httpArtifact == null ? false : httpArtifact.getConfig().isStatic());
+//			executionContext.getTransactionContext().add(transactionId, transactionable);
+//		}
+//		return transactionable;
 	}
 	
 	public static HTTPTransactionable getTransactionable(ExecutionContext executionContext, String transactionId, HTTPClientArtifact httpArtifact) throws IOException, KeyStoreException, NoSuchAlgorithmException {
@@ -194,7 +201,8 @@ public class Services {
 	//			connectionHandler, 
 				new PlainConnectionHandler(context, connectionTimeout, socketTimeout),
 				new SPIAuthenticationHandler(), 
-				new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()),
+//				new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()),
+				new CookieManager(),
 				false
 			);
 		}
@@ -223,4 +231,23 @@ public class Services {
 		return filters;
 	}
 	
+	@WebResult(name = "part")
+	public Part newFormInput(@WebParam(name = "parameters") List<KeyValuePair> parameters, @WebParam(name = "headers") List<Header> headers) {
+		StringBuilder content = new StringBuilder();
+		for (KeyValuePair parameter: parameters) {
+			if (!content.toString().isEmpty()) {
+				content.append("&");
+			}
+			content.append(URIUtils.encodeURL(parameter.getKey()));
+			content.append("=");
+			content.append(URIUtils.encodeURL(parameter.getValue()));
+		}
+		byte [] bytes = content.toString().getBytes(Charset.forName("UTF-8"));
+		if (headers == null) {
+			headers = new ArrayList<Header>();
+		}
+		headers.add(new MimeHeader("Content-Length", "" + bytes.length));
+		headers.add(new MimeHeader("Content-Type", "application/x-www-form-urlencoded"));
+		return new PlainMimeContentPart(null, IOUtils.wrap(bytes, true), headers.toArray(new Header[headers.size()]));
+	}
 }
