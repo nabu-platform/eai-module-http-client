@@ -207,7 +207,10 @@ public class Services {
 			);
 		}
 		else {
-			NIOHTTPClientImpl impl = new NIOHTTPClientImpl(context, 5, 10, maxAmountOfConnectionsPerTarget, new EventDispatcherImpl(), new MemoryMessageDataProvider(), new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()), Executors.defaultThreadFactory());
+			int ioPoolSize = httpArtifact.getConfig().getIoPoolSize() != null ? httpArtifact.getConfig().getIoPoolSize() : 5;
+			int processPoolSize = httpArtifact.getConfig().getProcessPoolSize() != null ? httpArtifact.getConfig().getProcessPoolSize() : 10;
+			// we need at least a couple of io threads so we don't get stuck
+			NIOHTTPClientImpl impl = new NIOHTTPClientImpl(context, Math.max(3, ioPoolSize), Math.max(1, processPoolSize), maxAmountOfConnectionsPerTarget, new EventDispatcherImpl(), new MemoryMessageDataProvider(), new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()), Executors.defaultThreadFactory());
 			impl.setRequestTimeout(socketTimeout);
 			return impl;
 		}

@@ -13,10 +13,10 @@ import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
 import be.nabu.utils.security.SSLContextType;
 
 @XmlRootElement(name = "httpClient")
-@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "type", "static" })
+@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "type", "static", "ioPoolSize", "processPoolSize" })
 public class HTTPClientConfiguration {
 	
-	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget;
+	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget, ioPoolSize, processPoolSize;
 	private ProxyArtifact proxy;
 	private KeyStoreArtifact keystore;
 	private Cookies cookiePolicy;
@@ -98,4 +98,21 @@ public class HTTPClientConfiguration {
 		SYNCHRONOUS,
 		ASYNCHRONOUS
 	}
+
+	@Advanced
+	public Integer getIoPoolSize() {
+		return ioPoolSize;
+	}
+	public void setIoPoolSize(Integer ioPoolSize) {
+		this.ioPoolSize = ioPoolSize;
+	}
+	
+	@Advanced
+	public Integer getProcessPoolSize() {
+		return processPoolSize;
+	}
+	public void setProcessPoolSize(Integer processPoolSize) {
+		this.processPoolSize = processPoolSize;
+	}
+	
 }

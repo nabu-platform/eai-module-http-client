@@ -29,4 +29,5 @@ public class HTTPClientGUIManager extends BaseJAXBGUIManager<HTTPClientConfigura
 	public String getCategory() {
 		return "Protocols";
 	}
+	
 }
