@@ -13,7 +13,7 @@ import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
 import be.nabu.utils.security.SSLContextType;
 
 @XmlRootElement(name = "httpClient")
-@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "type", "static", "ioPoolSize", "processPoolSize" })
+@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "type", "static", "ioPoolSize", "processPoolSize", "captureErrors", "captureSuccessful" })
 public class HTTPClientConfiguration {
 	
 	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget, ioPoolSize, processPoolSize;
@@ -23,7 +23,9 @@ public class HTTPClientConfiguration {
 	private SSLContextType sslContextType;
 	private Type type;
 	private boolean isStatic;
-	
+	// capture requests based on the response
+	private boolean captureErrors, captureSuccessful;
+		
 	public Integer getSocketTimeout() {
 		return socketTimeout;
 	}
@@ -113,6 +115,22 @@ public class HTTPClientConfiguration {
 	}
 	public void setProcessPoolSize(Integer processPoolSize) {
 		this.processPoolSize = processPoolSize;
+	}
+	
+	@Advanced
+	public boolean isCaptureErrors() {
+		return captureErrors;
+	}
+	public void setCaptureErrors(boolean captureErrors) {
+		this.captureErrors = captureErrors;
+	}
+	
+	@Advanced
+	public boolean isCaptureSuccessful() {
+		return captureSuccessful;
+	}
+	public void setCaptureSuccessful(boolean captureSuccessful) {
+		this.captureSuccessful = captureSuccessful;
 	}
 	
 }

@@ -25,9 +25,13 @@ import be.nabu.eai.module.http.client.HTTPClientConfiguration.Type;
 import be.nabu.eai.module.http.client.HTTPTransactionable;
 import be.nabu.eai.module.proxy.ProxyArtifact;
 import be.nabu.libs.authentication.api.principals.BasicPrincipal;
+import be.nabu.libs.events.api.EventDispatcher;
 import be.nabu.libs.events.impl.EventDispatcherImpl;
+import be.nabu.libs.http.api.HTTPEntity;
+import be.nabu.libs.http.api.HTTPInterceptor;
 import be.nabu.libs.http.api.HTTPRequest;
 import be.nabu.libs.http.api.HTTPResponse;
+import be.nabu.libs.http.api.LinkableHTTPResponse;
 import be.nabu.libs.http.api.client.HTTPClient;
 import be.nabu.libs.http.api.client.ProxyBypassFilter;
 import be.nabu.libs.http.client.DefaultHTTPClient;
@@ -39,10 +43,16 @@ import be.nabu.libs.http.client.connections.PooledConnectionHandler;
 import be.nabu.libs.http.client.nio.NIOHTTPClientImpl;
 import be.nabu.libs.http.core.CustomCookieStore;
 import be.nabu.libs.http.core.DefaultHTTPRequest;
+import be.nabu.libs.http.core.HTTPUtils;
+import be.nabu.libs.http.core.HttpMessage;
 import be.nabu.libs.http.server.nio.MemoryMessageDataProvider;
+import be.nabu.libs.nio.PipelineUtils;
+import be.nabu.libs.nio.api.Pipeline;
 import be.nabu.libs.resources.URIUtils;
 import be.nabu.libs.services.api.ExecutionContext;
 import be.nabu.libs.types.api.KeyValuePair;
+import be.nabu.utils.cep.impl.CEPUtils;
+import be.nabu.utils.cep.impl.HTTPComplexEventImpl;
 import be.nabu.utils.io.IOUtils;
 import be.nabu.utils.mime.api.Header;
 import be.nabu.utils.mime.api.ModifiablePart;
@@ -152,7 +162,7 @@ public class Services {
 	}
 	
 	@SuppressWarnings("resource")
-	private static HTTPClient newClientInstance(HTTPClientArtifact httpArtifact) throws IOException, KeyStoreException, NoSuchAlgorithmException {
+	private static HTTPClient newClientInstance(final HTTPClientArtifact httpArtifact) throws IOException, KeyStoreException, NoSuchAlgorithmException {
 		int maxAmountOfConnectionsPerTarget = httpArtifact == null || httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget() == null ? 5 : httpArtifact.getConfiguration().getMaxAmountOfConnectionsPerTarget(); 
 		Cookies cookiePolicy = httpArtifact == null || httpArtifact.getConfiguration().getCookiePolicy() == null ? Cookies.ACCEPT_ALL : httpArtifact.getConfiguration().getCookiePolicy();
 		SSLContextType sslContextType = httpArtifact == null || httpArtifact.getConfiguration().getSslContextType() == null ? SSLContextType.TLS : httpArtifact.getConfiguration().getSslContextType();
@@ -165,6 +175,45 @@ public class Services {
 			context = SSLContext.getDefault();
 		}
 		
+		final boolean captureErrors = httpArtifact != null && httpArtifact.getConfig().isCaptureErrors();
+		final boolean captureSuccessful = httpArtifact != null && httpArtifact.getConfig().isCaptureSuccessful();
+		final EventDispatcher complexEventDispatcher = httpArtifact == null ? null : httpArtifact.getRepository().getComplexEventDispatcher();
+		HTTPInterceptor interceptor = complexEventDispatcher != null && (captureErrors || captureSuccessful) ? new HTTPInterceptor() {
+			@Override
+			public HTTPEntity intercept(HTTPEntity response) {
+				if (response instanceof HTTPResponse) {
+					if ((captureSuccessful && ((HTTPResponse) response).getCode() < 400) || (captureErrors && ((HTTPResponse) response).getCode() >= 400)) {
+						if (response instanceof LinkableHTTPResponse) {
+							HTTPRequest request = ((LinkableHTTPResponse) response).getRequest();
+							if (request != null) {
+								HTTPComplexEventImpl event = new HTTPComplexEventImpl();
+								event.setResponseCode(((HTTPResponse) response).getCode());
+								event.setMethod(request.getMethod());
+								event.setArtifactId(httpArtifact.getId());
+								event.setEventCategory("http-message");
+								try {
+									event.setRequestUri(HTTPUtils.getURI(request, false));
+								}
+								catch (FormatException e) {
+									// best effort
+									e.printStackTrace();
+								}
+								Pipeline pipeline = PipelineUtils.getPipeline();
+								CEPUtils.enrich(event, getClass(), "http-message-out", pipeline == null || pipeline.getSourceContext() == null ? null : pipeline.getSourceContext().getSocketAddress(), null, null);
+								event.setApplicationProtocol("HTTP");
+								event.setCorrelationId(MimeUtils.getCorrelationId(request.getContent().getHeaders()));
+								HttpMessage messageIn = HTTPUtils.toMessage(request);
+								HttpMessage messageOut = HTTPUtils.toMessage(response);
+								event.setData("# Request\n\n" + messageIn.getMessage() + "\n\n# Response\n\n" + messageOut.getMessage());
+								complexEventDispatcher.fire(event, this);
+							}
+						}
+					}
+				}
+				return response;
+			}
+		} : null;
+				
 		ProxyArtifact proxy = httpArtifact == null ? null : httpArtifact.getConfiguration().getProxy();
 		int connectionTimeout = httpArtifact == null || httpArtifact.getConfiguration().getConnectionTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getConnectionTimeout();
 		int socketTimeout = httpArtifact == null || httpArtifact.getConfiguration().getSocketTimeout() == null ? 1000*60*30 : httpArtifact.getConfiguration().getSocketTimeout();
@@ -197,7 +246,7 @@ public class Services {
 					context
 				), generateProxyBypassFilters(proxy.getConfiguration().getBypass()).toArray(new ProxyBypassFilter[0]));
 			}
-			return new DefaultHTTPClient(
+			DefaultHTTPClient client = new DefaultHTTPClient(
 	//			connectionHandler, 
 				new PlainConnectionHandler(context, connectionTimeout, socketTimeout),
 				new SPIAuthenticationHandler(), 
@@ -205,6 +254,8 @@ public class Services {
 				new CookieManager(),
 				false
 			);
+			client.getExecutor().setInterceptor(interceptor);
+			return client;
 		}
 		else {
 			int ioPoolSize = httpArtifact.getConfig().getIoPoolSize() != null ? httpArtifact.getConfig().getIoPoolSize() : 5;
@@ -212,6 +263,7 @@ public class Services {
 			// we need at least a couple of io threads so we don't get stuck
 			NIOHTTPClientImpl impl = new NIOHTTPClientImpl(context, Math.max(3, ioPoolSize), Math.max(1, processPoolSize), maxAmountOfConnectionsPerTarget, new EventDispatcherImpl(), new MemoryMessageDataProvider(), new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()), Executors.defaultThreadFactory());
 			impl.setRequestTimeout(socketTimeout);
+			impl.setInterceptor(interceptor);
 			return impl;
 		}
 	}
