@@ -1,0 +1,124 @@
+result = xml.objectify(file.read("http-client.xml"))
+
+tag("HTTP Client")
+
+result/type = parameter(
+	name: "type",
+	category: "Basic",
+	title: null,
+	description: "The type of HTTP client.",
+	type: null,
+	encrypted: false,
+	optional: true,
+	raw: result/type,
+	default: "SYNCHRONOUS",
+	enumeration: "SYNCHRONOUS", "ASYNCHRONOUS")/current
+	
+result/static = parameter(
+	name: "static",
+	category: "Basic",
+	title: null,
+	description: "A static client is shared by the entire server, rather than created ad hoc. It can boost performance but should be used with caution.",
+	type: "boolean",
+	encrypted: false,
+	optional: true,
+	raw: result/static)/current
+	
+result/keystore = parameter(
+	name: "keystore",
+	category: "Security",
+	title: null,
+	description: "The keystore this client uses",
+	type: "artifact",
+	encrypted: false,
+	optional: true,
+	raw: result/keystore)/current
+	
+result/sslContextType = parameter(
+	name: "sslContextType",
+	category: "Security",
+	title: null,
+	description: "The ssl type that is used",
+	type: "artifact",
+	encrypted: false,
+	optional: true,
+	raw: result/sslContextType,
+	default: "TLS",
+	enumeration: "SSLv3", "TLS")/current
+	
+result/captureErrors = parameter(
+	name: "captureErrors",
+	category: "Logging",
+	title: null,
+	description: "By enabling this, all http traffic that results in an error is captured in the events.",
+	type: "boolean",
+	encrypted: false,
+	optional: true,
+	raw: result/captureErrors)/current
+
+result/captureSuccessful = parameter(
+	name: "captureSuccessful",
+	category: "Logging",
+	title: null,
+	description: "By enabling this, all http traffic that is successful is captured in the events.",
+	type: "boolean",
+	encrypted: false,
+	optional: true,
+	raw: result/captureSuccessful)/current
+	
+result/ioPoolSize = parameter(
+	name: "ioPoolSize",
+	category: "Limits",
+	title: null,
+	description: "The amount of threads available for I/O, this can not be set below 3",
+	type: "long",
+	encrypted: false,
+	optional: true,
+	default: 5,
+	raw: result/ioPoolSize)/current
+
+result/processPoolSize = parameter(
+	name: "processPoolSize",
+	category: "Limits",
+	title: null,
+	description: "The amount of threads available for processing",
+	type: "long",
+	encrypted: false,
+	optional: true,
+	default: 10,
+	raw: result/processPoolSize)/current
+
+result/connectionTimeout = parameter(
+	name: "connectionTimeout",
+	category: "Limits",
+	title: null,
+	description: "The connection timeout (in ms)",
+	type: "long",
+	encrypted: false,
+	optional: true,
+	default: "30 minutes",
+	raw: result/connectionTimeout)/current
+	
+result/socketTimeout = parameter(
+	name: "socketTimeout",
+	category: "Limits",
+	title: null,
+	description: "The socket timeout (in ms)",
+	type: "long",
+	encrypted: false,
+	optional: true,
+	default: "30 minutes",
+	raw: result/socketTimeout)/current
+
+result/maxAmountOfConnectionsPerTarget = parameter(
+	name: "maxAmountOfConnectionsPerTarget",
+	category: "Limits",
+	title: null,
+	description: "The maximum amount of connections to a single server",
+	type: "long",
+	encrypted: false,
+	optional: true,
+	default: "5",
+	raw: result/maxAmountOfConnectionsPerTarget)/current
+	
+file.write("http-client.xml", xml.stringify(result))
