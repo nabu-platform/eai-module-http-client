@@ -47,6 +47,11 @@ public class HTTPClientConfiguration {
 		this.maxAmountOfConnectionsPerTarget = maxAmountOfConnectionsPerTarget;
 	}
 	
+	// @2021-10-24: we've never actually used a proxy before, either we run on our own infrastructure or firewall rules were added
+	// if we ever do need a proxy, we need to incorporate all the necessary settings _in_ the http client configuration
+	// otherwise it is hard to "arbitrarily" configure a proxy in prd where none exists in dev for example
+	// the proxy artifact seems to do nothing special except hold on to the configuration parameters anyway.
+	@Deprecated
 	@EnvironmentSpecific
 	@XmlJavaTypeAdapter(value = ArtifactXMLAdapter.class)
 	public ProxyArtifact getProxy() {
