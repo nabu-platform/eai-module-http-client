@@ -93,6 +93,15 @@ public class Services {
 			modifiablePart.setHeader(new MimeHeader("Host", url.getAuthority()));
 		}
 		
+		Header contentLengthHeader = MimeUtils.getHeader("Content-Length", modifiablePart.getHeaders());
+		// if we don't have a specific content length, check that we have chunked encoding
+		if (contentLengthHeader == null) {
+			String transferEncoding = MimeUtils.getTransferEncoding(modifiablePart.getHeaders());
+			if (transferEncoding == null) {
+				modifiablePart.setHeader(new MimeHeader("Transfer-Encoding", "chunked"));
+			}
+		}
+		
 		String target;
 		if (forceFullTarget) {
 			target = url.toString();
