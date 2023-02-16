@@ -95,7 +95,7 @@ public class Services {
 		
 		Header contentLengthHeader = MimeUtils.getHeader("Content-Length", modifiablePart.getHeaders());
 		// if we don't have a specific content length, check that we have chunked encoding
-		if (contentLengthHeader == null) {
+		if (contentLengthHeader == null && !"get".equalsIgnoreCase(method)) {
 			String transferEncoding = MimeUtils.getTransferEncoding(modifiablePart.getHeaders());
 			if (transferEncoding == null) {
 				modifiablePart.setHeader(new MimeHeader("Transfer-Encoding", "chunked"));
