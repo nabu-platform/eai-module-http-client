@@ -13,10 +13,10 @@ import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
 import be.nabu.utils.security.SSLContextType;
 
 @XmlRootElement(name = "httpClient")
-@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "type", "static", "ioPoolSize", "processPoolSize", "captureErrors", "captureSuccessful" })
+@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "maxChunkSize", "type", "static", "ioPoolSize", "processPoolSize", "captureErrors", "captureSuccessful" })
 public class HTTPClientConfiguration {
 	
-	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget, ioPoolSize, processPoolSize;
+	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget, ioPoolSize, processPoolSize, maxChunkSize;
 	private ProxyArtifact proxy;
 	private KeyStoreArtifact keystore;
 	private Cookies cookiePolicy;
@@ -136,6 +136,14 @@ public class HTTPClientConfiguration {
 	}
 	public void setCaptureSuccessful(boolean captureSuccessful) {
 		this.captureSuccessful = captureSuccessful;
+	}
+	
+	@Advanced
+	public Integer getMaxChunkSize() {
+		return maxChunkSize;
+	}
+	public void setMaxChunkSize(Integer maxChunkSize) {
+		this.maxChunkSize = maxChunkSize;
 	}
 	
 }

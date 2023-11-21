@@ -273,6 +273,7 @@ public class Services {
 			NIOHTTPClientImpl impl = new NIOHTTPClientImpl(context, Math.max(3, ioPoolSize), Math.max(1, processPoolSize), maxAmountOfConnectionsPerTarget, new EventDispatcherImpl(), new MemoryMessageDataProvider(), new CookieManager(new CustomCookieStore(), cookiePolicy.getPolicy()), Executors.defaultThreadFactory());
 			impl.setRequestTimeout(socketTimeout);
 			impl.setInterceptor(interceptor);
+			impl.setMaxChunkSize(httpArtifact.getConfig().getMaxChunkSize());
 			return impl;
 		}
 	}
