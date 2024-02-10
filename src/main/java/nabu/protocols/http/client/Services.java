@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.jws.WebParam;
 import javax.jws.WebResult;
@@ -34,6 +35,7 @@ import be.nabu.libs.http.api.HTTPResponse;
 import be.nabu.libs.http.api.LinkableHTTPResponse;
 import be.nabu.libs.http.api.client.HTTPClient;
 import be.nabu.libs.http.api.client.ProxyBypassFilter;
+import be.nabu.libs.http.api.client.TimedHTTPClient;
 import be.nabu.libs.http.client.DefaultHTTPClient;
 import be.nabu.libs.http.client.HTTPProxy;
 import be.nabu.libs.http.client.NTLMPrincipalImpl;
@@ -70,7 +72,7 @@ public class Services {
 	private ExecutionContext executionContext;
 	
 	@WebResult(name = "response")
-	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId, @WebParam(name = "forceFullTarget") Boolean forceFullTarget) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
+	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId, @WebParam(name = "forceFullTarget") Boolean forceFullTarget, @WebParam(name = "timeout") Long timeout, @WebParam(name = "timeoutUnit") TimeUnit unit) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
 		if (followRedirects == null) {
 			followRedirects = true;
 		}
@@ -131,7 +133,12 @@ public class Services {
 				principal = new NTLMPrincipalImpl(principal.getName().substring(0, index), principal.getName().substring(index + 1), principal.getName());
 			}
 		}
-		return client.execute(request, principal, "https".equals(url.getScheme()), followRedirects);
+		if (client instanceof TimedHTTPClient) {
+			return ((TimedHTTPClient) client).execute(request, principal, "https".equals(url.getScheme()), followRedirects, timeout, unit);
+		}
+		else {
+			return client.execute(request, principal, "https".equals(url.getScheme()), followRedirects);
+		}
 	}
 	
 	public static HTTPTransactionable getTransactionable(ExecutionContext executionContext, String transactionId, String clientId) throws IOException, KeyStoreException, NoSuchAlgorithmException {
