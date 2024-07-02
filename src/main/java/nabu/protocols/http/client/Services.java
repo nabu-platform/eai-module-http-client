@@ -45,6 +45,7 @@ import be.nabu.libs.http.client.connections.PooledConnectionHandler;
 import be.nabu.libs.http.client.nio.NIOHTTPClientImpl;
 import be.nabu.libs.http.core.CustomCookieStore;
 import be.nabu.libs.http.core.DefaultHTTPRequest;
+import be.nabu.libs.http.core.HTTPRequestAuthenticatorFactory;
 import be.nabu.libs.http.core.HTTPUtils;
 import be.nabu.libs.http.core.HttpMessage;
 import be.nabu.libs.http.server.nio.MemoryMessageDataProvider;
@@ -65,6 +66,7 @@ import be.nabu.utils.mime.impl.MimeUtils;
 import be.nabu.utils.mime.impl.PlainMimeContentPart;
 import be.nabu.utils.mime.impl.PlainMimeEmptyPart;
 import be.nabu.utils.security.SSLContextType;
+import nabu.protocols.http.client.types.HTTPAuthentication;
 
 @WebService
 public class Services {
@@ -72,7 +74,7 @@ public class Services {
 	private ExecutionContext executionContext;
 	
 	@WebResult(name = "response")
-	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId, @WebParam(name = "forceFullTarget") Boolean forceFullTarget, @WebParam(name = "timeout") Long timeout, @WebParam(name = "timeoutUnit") TimeUnit unit) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
+	public HTTPResponse execute(@WebParam(name = "url") @NotNull URI url, @WebParam(name = "method") String method, @WebParam(name = "part") Part part, @WebParam(name = "principal") BasicPrincipal principal, @WebParam(name = "followRedirects") Boolean followRedirects, @WebParam(name = "httpVersion") Double httpVersion, @WebParam(name = "httpClientId") String httpClientId, @WebParam(name = "transactionId") String transactionId, @WebParam(name = "forceFullTarget") Boolean forceFullTarget, @WebParam(name = "timeout") Long timeout, @WebParam(name = "timeoutUnit") TimeUnit unit, @WebParam(name = "authentication") HTTPAuthentication authentication) throws NoSuchAlgorithmException, KeyStoreException, IOException, FormatException, ParseException {
 		if (followRedirects == null) {
 			followRedirects = true;
 		}
@@ -123,6 +125,12 @@ public class Services {
 			modifiablePart,
 			httpVersion
 		);
+		
+		if (authentication != null && authentication.getSecurityType() != null && !HTTPRequestAuthenticatorFactory.getInstance().getAuthenticator(authentication.getSecurityType())
+				.authenticate(request, authentication.getSecurityContext(), null, false)) {
+			throw new IllegalStateException("Could not authenticate the request");
+		}
+		
 		if (principal != null && principal.getName() != null) {
 			int index = principal.getName().indexOf('/');
 			if (index < 0) {
