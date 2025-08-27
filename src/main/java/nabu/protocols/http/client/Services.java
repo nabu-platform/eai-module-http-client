@@ -296,6 +296,9 @@ public class Services {
 				false
 			);
 			client.getExecutor().setInterceptor(interceptor);
+			if (httpArtifact != null) {
+				client.setForceContentLength(httpArtifact.getConfig().isForceContentLength());
+			}
 			return client;
 		}
 		else {

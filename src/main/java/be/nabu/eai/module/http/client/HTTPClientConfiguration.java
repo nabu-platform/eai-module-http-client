@@ -27,13 +27,15 @@ import be.nabu.eai.api.EnvironmentSpecific;
 import be.nabu.eai.module.keystore.KeyStoreArtifact;
 import be.nabu.eai.module.proxy.ProxyArtifact;
 import be.nabu.eai.repository.jaxb.ArtifactXMLAdapter;
+import be.nabu.libs.types.api.annotation.Field;
 import be.nabu.utils.security.SSLContextType;
 
 @XmlRootElement(name = "httpClient")
-@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "maxChunkSize", "type", "static", "ioPoolSize", "processPoolSize", "captureErrors", "captureSuccessful" })
+@XmlType(propOrder = { "proxy", "keystore", "sslContextType", "cookiePolicy", "maxAmountOfConnectionsPerTarget", "socketTimeout", "connectionTimeout", "maxChunkSize", "type", "static", "ioPoolSize", "processPoolSize", "captureErrors", "captureSuccessful", "forceContentLength" })
 public class HTTPClientConfiguration {
 	
 	private Integer socketTimeout, connectionTimeout, maxAmountOfConnectionsPerTarget, ioPoolSize, processPoolSize, maxChunkSize;
+	private boolean forceContentLength;
 	private ProxyArtifact proxy;
 	private KeyStoreArtifact keystore;
 	private Cookies cookiePolicy;
@@ -155,6 +157,7 @@ public class HTTPClientConfiguration {
 		this.captureSuccessful = captureSuccessful;
 	}
 	
+	@Field(show = "type == 'ASYNCHRONOUS'")
 	@Advanced
 	public Integer getMaxChunkSize() {
 		return maxChunkSize;
@@ -163,4 +166,12 @@ public class HTTPClientConfiguration {
 		this.maxChunkSize = maxChunkSize;
 	}
 	
+	@Field(hide = "type == 'ASYNCHRONOUS'")
+	public boolean isForceContentLength() {
+		return forceContentLength;
+	}
+	public void setForceContentLength(boolean forceContentLength) {
+		this.forceContentLength = forceContentLength;
+	}
+		
 }
