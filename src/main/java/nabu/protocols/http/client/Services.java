@@ -130,10 +130,10 @@ public class Services {
 		else {
 			target = url.getPath() == null || url.getPath().isEmpty() ? "/" : url.getPath();
 			if (url.getQuery() != null) {
-				target += "?" + url.getQuery();
+				target += "?" + url.getRawQuery();
 			}
 			if (url.getFragment() != null) {
-				target += "#" + url.getFragment();
+				target += "#" + url.getRawFragment();
 			}
 		}
 		HTTPRequest request = new DefaultHTTPRequest(
