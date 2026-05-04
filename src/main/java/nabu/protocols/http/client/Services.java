@@ -243,8 +243,8 @@ public class Services {
 								CEPUtils.enrich(event, getClass(), "http-message-out", pipeline == null || pipeline.getSourceContext() == null ? null : pipeline.getSourceContext().getSocketAddress(), null, null);
 								event.setApplicationProtocol("HTTP");
 								event.setCorrelationId(MimeUtils.getCorrelationId(request.getContent().getHeaders()));
-								HttpMessage messageIn = HTTPUtils.toMessage(request);
-								HttpMessage messageOut = HTTPUtils.toMessage(response);
+								HttpMessage messageIn = HTTPUtils.toMessage(request, true);
+								HttpMessage messageOut = HTTPUtils.toMessage(response, true);
 								event.setData("# Request\n\n" + messageIn.getMessage() + "\n\n# Response\n\n" + messageOut.getMessage());
 								complexEventDispatcher.fire(event, this);
 							}
